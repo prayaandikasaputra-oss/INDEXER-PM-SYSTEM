@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Indexer PM System | ESEC Wire Bonder 3088</title>
+  <!-- Firebase (Online User Database) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    :root, [data-theme="dark"] {
+      --bg: #0b1120;
+      --card: #111827;
+      --border: #1f2a3c;
+      --primary: #38bdf8;
+      --primary-dark: #0ea5e9;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --accent: #0ea5e9;
+      --header-bg: linear-gradient(90deg, #0f172a, #1e293b);
+      --input-bg: #0f172a;
+      --tab-bg: #0f172a;
+    }
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #cbd5e1;
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --text: #0f172a;
+      --muted: #64748b;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --accent: #0284c7;
+      --header-bg: linear-gradient(90deg, #e2e8f0, #f8fafc);
+      --input-bg: #f8fafc;
+      --tab-bg: #e2e8f0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+      transition: background 0.25s, color 0.25s;
+    }
+    /* AUTH */
+    #auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(ellipse at top, #1e293b 0%, #0b1120 70%);
+    }
+    [data-theme="light"] #auth-screen {
+      background: radial-gradient(ellipse at top, #e2e8f0 0%, #f1f5f9 70%);
+    }
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    }
+    .auth-card h1 { font-size: 1.3rem; text-align: center; margin-bottom: 4px; }
+    .auth-card .subtitle { text-align: center; color: var(--muted); font-size: 0.8rem; margin-bottom: 22px; }
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--tab-bg);
+      position: relative;
+      z-index: 20;
+    }
+    .auth-tab {
+      flex: 1;
+      min-height: 52px;
+      padding: 16px 10px;
+      text-align: center;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: rgba(56,189,248,0.35);
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      position: relative;
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+    }
+    .auth-tab:active { opacity: 0.85; transform: scale(0.98); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    .auth-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+      touch-action: manipulation;
+    }
+    .auth-msg {
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 14px;
+      text-align: center;
+      display: none;
+    }
+    .auth-msg.error { background: rgba(239,68,68,0.15); color: #fca5a5; }
+    .auth-msg.success { background: rgba(34,197,94,0.15); color: #86efac; }
+    [data-theme="light"] .auth-msg.error { color: #b91c1c; }
+    [data-theme="light"] .auth-msg.success { color: #15803d; }
+    .auth-hint { margin-top: 16px; font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.5; }
+    /* HEADER */
+    #app { display: none; }
+    header {
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; }
+    .logo-badge {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: white;
+    }
+    .nav-links {
+      display: flex; gap: 4px; order: 3; width: 100%;
+      justify-content: center; margin-top: 4px;
+    }
+    @media (min-width: 700px) {
+      .nav-links { order: 0; width: auto; margin-top: 0; }
+    }
+    .nav-links button {
+      background: transparent; border: 1px solid transparent; color: var(--muted);
+      padding: 8px 14px; border-radius: 6px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 500;
+      touch-action: manipulation; min-height: 40px;
+    }
+    .nav-links button.active, .nav-links button:hover {
+      background: rgba(56,189,248,0.12); color: var(--primary);
+      border-color: rgba(56,189,248,0.3);
+    }
+    .user-area { display: flex; align-items: center; gap: 8px; }
+    /* Theme Toggle */
+    .theme-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem;
+      touch-action: manipulation;
+      transition: 0.2s;
+    }
+    .theme-btn:hover { border-color: var(--primary); }
+    .profile-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25);
+      padding: 4px 10px 4px 5px; border-radius: 24px; cursor: pointer;
+      color: var(--text); font-size: 0.8rem; touch-action: manipulation;
+    }
+    .avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: white;
+    }
+    .logout-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;
+      touch-action: manipulation;
+    }
+    .admin-only{display:none}.header-left{display:flex;align-items:center;gap:10px;min-width:0}.menu-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1.45rem;cursor:pointer;display:flex;align-items:center;justify-content:center}.side-menu{position:fixed;left:0;top:0;bottom:0;width:min(340px,88vw);z-index:180;background:var(--card);border-right:1px solid var(--border);transform:translateX(-105%);transition:transform .25s ease;padding:16px;box-shadow:20px 0 50px rgba(0,0,0,.25)}.side-menu.open{transform:translateX(0)}.side-menu-head{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}.side-menu-head button{background:transparent;border:0;color:var(--muted);font-size:1.6rem;cursor:pointer}.side-menu>button{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:transparent;border:1px solid transparent;color:var(--muted);padding:13px 12px;border-radius:9px;cursor:pointer;font-size:.86rem;margin:3px 0}.side-menu>button:hover,.side-menu>button.active{background:rgba(56,189,248,.12);color:var(--primary);border-color:rgba(56,189,248,.25)}.menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:170}.menu-backdrop.show{display:block}.home-card{background:linear-gradient(135deg,#101827,#111c31);border:1px solid var(--border);border-radius:18px;padding:28px 24px;box-shadow:0 15px 35px rgba(0,0,0,.18)}[data-theme="light"] .home-card{background:linear-gradient(135deg,#fff,#eef6ff)}.home-greeting{font-size:2.7rem;font-weight:800;line-height:1.1;margin-bottom:10px}.home-date{color:var(--muted);font-size:1rem;margin-bottom:28px}.identity-card{display:flex;align-items:center;gap:18px;background:rgba(15,23,42,.55);border:1px solid var(--border);border-radius:16px;padding:18px}.identity-icon{width:92px;height:92px;border-radius:18px;background:rgba(14,165,233,.12);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:2.8rem;flex-shrink:0}.identity-main{flex:1;min-width:0}.identity-name{font-size:1.45rem;font-weight:800}.identity-role{color:var(--muted);font-size:1rem;margin-top:2px}.identity-badge{background:rgba(148,163,184,.12);border:1px solid var(--border);padding:10px 16px;border-radius:12px;font-weight:800;white-space:nowrap}.identity-branch{color:var(--muted);margin-top:16px;font-size:1rem}.home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:18px}.home-action{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer}.home-action:hover{border-color:var(--primary)}.home-action h3{font-size:1rem;margin-bottom:4px}.home-action p{font-size:.8rem;color:var(--muted)}.machine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:16px}.machine-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px;cursor:pointer}.machine-card:hover{border-color:var(--primary)}.machine-id{font-weight:800;color:var(--primary);font-size:1.05rem}.machine-status{color:var(--success);font-size:.75rem;margin-top:4px}.forgot-btn{width:100%;margin-top:10px;background:transparent;border:0;color:var(--primary);cursor:pointer;font-size:.8rem}.machine-selector-card{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin:12px 0}.machine-selector-card label{font-size:.78rem;color:var(--muted)}.machine-selector-card select{background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:9px;border-radius:7px;min-width:150px}.machine-selector-card span{font-weight:800;color:var(--primary)}.password-section input{display:block;width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:16px;outline:none}.admin-table{width:100%;border-collapse:collapse;min-width:650px}.admin-table th,.admin-table td{padding:9px;border-bottom:1px solid var(--border);text-align:left}.role-chip{display:inline-block;padding:3px 8px;border-radius:99px;font-size:.7rem;background:rgba(56,189,248,.12);color:var(--primary)}@media(max-width:600px){.home-greeting{font-size:2rem}.identity-card{align-items:flex-start}.identity-icon{width:60px;height:60px;font-size:1.8rem}.identity-name{font-size:1.1rem}.identity-badge{font-size:.8rem;padding:8px}}
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 200; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 18px; border-bottom: 1px solid var(--border);
+    }
+    .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 18px; }
+    .profile-qr { text-align: center; margin-bottom: 18px; }
+    .profile-qr img {
+      border-radius: 12px; border: 3px solid var(--border);
+      background: white; padding: 8px; max-width: 140px;
+    }
+    .profile-qr p { font-size: 0.72rem; color: var(--muted); margin-top: 8px; }
+    .profile-field { margin-bottom: 12px; }
+    .profile-field label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+    .profile-field input, .profile-field select {
+      width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+      color: var(--text); padding: 11px 12px; border-radius: 8px; font-size: 16px; outline: none;
+    }
+    .profile-field input:disabled { opacity: 0.7; }
+    .profile-activity {
+      background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+    }
+    .profile-activity .row {
+      display: flex; justify-content: space-between; font-size: 0.8rem;
+      padding: 4px 0; flex-wrap: wrap; gap: 4px;
+    }
+    .profile-activity .row span:first-child { color: var(--muted); }
+    .modal-footer {
+      padding: 12px 18px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;
+    }
+    .btn {
+      background: var(--primary-dark); color: white; border: none;
+      padding: 10px 16px; border-radius: 6px; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; touch-action: manipulation;
+    }
+    .btn.outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .btn.success { background: var(--success); }
+    .btn.danger { background: var(--danger); }
+    /* PAGES */
+    .page { display: none; max-width: 1400px; margin: 0 auto; padding: 20px 14px 40px; }
+    .page.active { display: block; }
+    /* DOCS */
+    .docs-content h2 {
+      font-size: 1.3rem; font-weight: 700; margin: 28px 0 12px;
+      color: var(--text); display: flex; align-items: center; gap: 10px;
+    }
+    .docs-content h2::before {
+      content: ''; width: 4px; height: 22px; background: var(--accent);
+      border-radius: 2px; flex-shrink: 0;
+    }
+    .docs-content h3 { font-size: 1.05rem; font-weight: 600; margin: 20px 0 8px; color: var(--text); }
+    .docs-content p { color: var(--muted); margin-bottom: 12px; font-size: 0.92rem; }
+    .card-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px; margin: 16px 0;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+    }
+    .card h4 { font-size: 0.95rem; margin-bottom: 6px; color: var(--text); }
+    .card p { font-size: 0.82rem; margin: 0; color: var(--muted); }
+    .period {
+      display: inline-block; background: rgba(16,185,129,0.15); color: var(--success);
+      padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin-top: 8px;
+    }
+    .warning-box {
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+      border-left: 4px solid var(--danger); border-radius: 8px; padding: 14px 16px; margin: 16px 0;
+    }
+    .warning-box h4 { color: #fca5a5; margin-bottom: 6px; font-size: 0.95rem; }
+    [data-theme="light"] .warning-box h4 { color: #b91c1c; }
+    .warning-box p { color: #fecaca; margin: 0; font-size: 0.85rem; }
+    [data-theme="light"] .warning-box p { color: #991b1b; }
+    .info-box {
+      background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.3);
+      border-left: 4px solid var(--accent); border-radius: 8px; padding: 14px 16px; margin: 14px 0;
+    }
+    .steps { counter-reset: step; margin: 14px 0; }
+    .step { display: flex; gap: 12px; margin-bottom: 12px; }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      min-width: 28px; height: 28px; background: var(--accent); color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
+    .step-content { flex: 1; padding-top: 2px; font-size: 0.9rem; color: var(--muted); }
+    .step-content strong { color: var(--text); }
+    .table-wrapper {
+      overflow-x: auto; margin: 14px 0; border-radius: 10px;
+      border: 1px solid var(--border); -webkit-overflow-scrolling: touch;
+    }
+    .docs-table { width: 100%; border-collapse: collapse; background: var(--card); min-width: 480px; }
+    .docs-table th {
+      background: var(--input-bg); color: var(--muted); font-size: 0.72rem; text-transform: uppercase;
+      padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .docs-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text); }
+    /* CHECKLIST */
+    .hero h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+    .hero p { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+    .stats {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 8px; margin-bottom: 14px;
+    }
+    @media (min-width: 600px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .stat-card .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
+    .stat-card .value { font-size: 1.25rem; font-weight: 700; margin-top: 2px; }
+    .stat-card.completed .value { color: var(--success); }
+    .stat-card.pending .value { color: var(--warning); }
+    .stat-card.total .value { color: var(--primary); }
+    .stat-card.pct .value { color: #a78bfa; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+    .controls input, .controls select {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 10px; border-radius: 6px; font-size: 16px; outline: none;
+    }
+    .controls input { min-width: 0; flex: 1 1 140px; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table {
+      width: 100%; border-collapse: collapse; background: var(--card);
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--border); min-width: 900px;
+    }
+    thead { background: var(--input-bg); }
+    th {
+      text-align: left; padding: 9px 10px; font-size: 0.65rem; text-transform: uppercase;
+      letter-spacing: 0.3px; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    td { padding: 7px 9px; border-bottom: 1px solid var(--border); font-size: 0.8rem; vertical-align: middle; color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr.done td { opacity: 0.55; }
+    tr.done td:first-child { opacity: 1; }
+    .check-cell { width: 34px; text-align: center; }
+    .check-cell input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--success); }
+    .inline-input {
+      background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
+      padding: 5px 6px; border-radius: 4px; font-size: 0.8rem; width: 100%;
+    }
+    .date-input {
+      background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
+      padding: 4px 5px; border-radius: 4px; font-size: 0.75rem; width: 110px;
+    }
+    .del-btn {
+      background: transparent; border: none; color: var(--danger);
+      cursor: pointer; font-size: 0.8rem; padding: 4px 6px; touch-action: manipulation;
+    }
+    footer {
+      text-align: center; padding: 16px; color: var(--muted);
+      font-size: 0.7rem; border-top: 1px solid var(--border);
+    }
+    .empty { text-align: center; padding: 32px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>Indexer PM System</h1>
+    <div class="subtitle">ESEC Wire Bonder 3088 • Preventive Maintenance</div>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" id="tab-login">Login</button>
+      <button type="button" class="auth-tab" id="tab-register">Daftar Akun</button>
+    </div>
+    <div class="auth-msg" id="auth-msg"></div>
+    <div id="form-login">
+      <div class="form-group"><label>NIM / Nama Dosen</label><input type="text" id="login-nim" placeholder="Masukkan NIM atau nama dosen" autocomplete="off" /></div>
+      <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="Masukkan Password" /></div>
+      <button type="button" class="auth-btn" onclick="doLogin()">Masuk</button>
+      <button type="button" class="forgot-btn" onclick="openResetModal()">Lupa password? Reset melalui email</button>
+    </div>
+    <div id="form-register" style="display:none">
+      <div class="form-group"><label id="reg-id-label">NIM</label><input type="text" id="reg-nim" placeholder="Masukkan NIM" autocomplete="off" /></div><div class="form-group"><label>Nama Lengkap</label><input type="text" id="reg-name" placeholder="Nama lengkap" autocomplete="name" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="nama@email.com" autocomplete="email" /></div>
+      <div class="form-group"><label>Password</label><input type="password" id="reg-pass" placeholder="Buat Password" /></div>
+      <div class="form-group"><label>Konfirmasi Password</label><input type="password" id="reg-pass2" placeholder="Ulangi Password" /></div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="reg-role" onchange="updateRegisterLabel()"><option value="mahasiswa">Mahasiswa</option><option value="dosen">Dosen</option></select>
+      </div>
+      <button type="button" class="auth-btn" onclick="doRegister()">Daftar Sekarang</button>
+    </div>
+    <div class="auth-hint">Selamat datang. Jika belum memiliki akun, mohon untuk daftar akun terlebih dahulu. Terima kasih.</div>
+  </div>
+</div>
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <button type="button" class="menu-btn" onclick="toggleSideMenu()" aria-label="Menu">⋮</button>
+      <div class="logo">
+        <div class="logo-badge">WB</div>
+        <div><div>Indexer PM System</div><div style="font-size:0.65rem;color:var(--muted);font-weight:400">ESEC Wire Bonder 3088</div></div>
+      </div>
+    </div>
+    <div class="user-area">
+      <button type="button" class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Ganti Mode">🌙</button>
+      <button type="button" class="profile-btn" onclick="openProfile()"><div class="avatar" id="header-avatar">?</div><span id="header-name">Profil</span></button>
+      <button type="button" class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+  <aside id="side-menu" class="side-menu">
+    <div class="side-menu-head"><strong>Menu</strong><button type="button" onclick="toggleSideMenu()">×</button></div>
+    <button type="button" id="menu-home" onclick="showPage('home');toggleSideMenu()">⌂ <span>Home</span></button>
+    <button type="button" id="menu-docs" onclick="showPage('docs');toggleSideMenu()">▤ <span>TECHNICAL DOCUMENTATION</span></button>
+    <button type="button" id="menu-checklist" onclick="showPage('checklist');toggleSideMenu()">☑ <span>Checklist</span></button>
+    <button type="button" id="menu-machines" onclick="showPage('machines');toggleSideMenu()">⚙ <span>Mesin ESEC Wire Bonder 3088</span></button>
+    <button type="button" id="menu-admin" class="admin-only" onclick="showPage('admin');toggleSideMenu()">★ <span>Master / User Management</span></button>
+  </aside>
+  <div id="menu-backdrop" class="menu-backdrop" onclick="toggleSideMenu()"></div>
+  <!-- PROFILE MODAL -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Profil Saya</h2>
+        <button type="button" class="modal-close" onclick="closeProfile()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-qr">
+          <img id="profile-qr-img" src="" alt="QR Code" width="140" height="140" />
+          <p>Scan QR untuk melihat data profil</p>
+        </div>
+        <div class="profile-field"><label>Nama Lengkap</label><input type="text" id="prof-nama" placeholder="Masukkan nama lengkap" /></div>
+        <div class="profile-field"><label>NIM</label><input type="text" id="prof-nim" disabled /></div>
+        <div class="profile-field"><label>Email</label><input type="email" id="prof-email" placeholder="contoh@email.com" /></div>
+        <div class="profile-field">
+          <label>Timezone</label>
+          <select id="prof-timezone">
+            <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+            <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+            <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+            <option value="Asia/Singapore">Asia/Singapore</option>
+            <option value="UTC">UTC</option>
+          </select>
+        </div>
+        <div class="profile-field password-section">
+          <label>Ganti Password</label>
+          <input type="password" id="prof-current-pass" placeholder="Password saat ini" />
+          <input type="password" id="prof-new-pass" placeholder="Password baru (min. 8 karakter)" style="margin-top:7px" />
+          <input type="password" id="prof-new-pass2" placeholder="Konfirmasi password baru" style="margin-top:7px" />
+          <button type="button" class="btn" style="margin-top:8px;width:100%" onclick="changeOwnPassword()">Ganti Password</button>
+        </div>
+        <div class="profile-field">
+          <label>Login Activity</label>
+          <div class="profile-activity">
+            <div class="row"><span>First Access</span><span id="prof-first">-</span></div>
+            <div class="row"><span>Last Access</span><span id="prof-last">-</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn outline" onclick="closeProfile()">Tutup</button>
+        <button type="button" class="btn success" onclick="saveProfile()">Simpan Profil</button>
+      </div>
+    </div>
+  </div>
+  <!-- RESET PASSWORD MODAL -->
+  <div class="modal-overlay" id="reset-modal">
+    <div class="modal">
+      <div class="modal-header"><h2>Reset Password</h2><button type="button" class="modal-close" onclick="closeResetModal()">&times;</button></div>
+      <div class="modal-body">
+        <p style="color:var(--muted);font-size:.86rem;margin-bottom:14px">Masukkan email yang terdaftar. Sistem akan menyiapkan permintaan reset password.</p>
+        <div class="profile-field"><label>Email</label><input type="email" id="reset-email" placeholder="nama@email.com" /></div>
+        <div class="info-box"><p style="margin:0">Untuk reset password melalui email secara benar dan aman pada website online, sistem membutuhkan backend/email service. Versi HTML ini sudah menyiapkan form dan endpoint konfigurasi, tetapi tidak menyimpan token reset secara aman di browser.</p></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn outline" onclick="closeResetModal()">Batal</button><button type="button" class="btn" onclick="requestPasswordReset()">Kirim Link Reset</button></div>
+    </div>
+  </div>
+  <!-- HOME -->
+  <div id="page-home" class="page active">
+    <div class="home-card">
+      <div class="home-greeting" id="home-greeting">Halo! 👋</div><div class="home-date" id="home-date"></div>
+      <div class="identity-card"><div class="identity-icon">♙</div><div class="identity-main"><div class="identity-name" id="home-name">User</div><div class="identity-role" id="home-role">Mahasiswa</div></div><div class="identity-badge" id="home-id">NIM</div></div>
+      <div class="identity-branch" id="home-branch">▥ Mahasiswa</div>
+    </div>
+    <div class="home-grid">
+      <div class="home-action" onclick="showPage('docs')"><h3>TECHNICAL DOCUMENTATION</h3><p>Dokumentasi teknis Indexer ESEC Wire Bonder 3088.</p></div>
+      <div class="home-action" onclick="showPage('checklist')"><h3>Checklist</h3><p>Preventive maintenance checklist dan progress.</p></div>
+      <div class="home-action" onclick="showPage('machines')"><h3>Mesin ESEC WB001–WB100</h3><p>Daftar 100 mesin dan status maintenance.</p></div>
+      <div class="home-action admin-only" onclick="showPage('admin')"><h3>Master / User Management</h3><p>Kelola akses mahasiswa dan dosen.</p></div>
+    </div>
+  </div>
+  <div id="page-machines" class="page"><div class="hero"><h1>ESEC Wire Bonder 3088 — Machine Registry</h1><p>Daftar mesin WB001 sampai WB100. Pilih mesin untuk langsung membuka checklist maintenance.</p><div class="controls"><input id="machine-search" placeholder="Cari WB001..." oninput="renderMachines()" /></div></div><div id="machine-grid" class="machine-grid"></div></div>
+  <div id="page-admin" class="page admin-only">
+    <div class="hero">
+      <h1>Master / User Management</h1>
+      <p>Kelola akses akun mahasiswa dan dosen. Data user tersimpan <strong>online</strong> (Firebase) sehingga terlihat dari semua perangkat.</p>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="controls">
+        <button type="button" class="btn" onclick="addMasterUser()">+ Tambah User</button>
+        <button type="button" class="btn outline" onclick="renderUsers()">🔄 Refresh Online</button>
+        <button type="button" class="btn outline" onclick="changeMasterPassword()">Ganti Password Master</button>
+      </div>
+      <div id="online-status" style="font-size:0.8rem;color:var(--muted);margin:8px 0 12px"></div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Login</th>
+              <th>Nama</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Last Access</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- DOCS (DEFAULT) -->
+  <div id="page-docs" class="page">
+    <div class="docs-content">
+      <div style="display:inline-block;background:rgba(14,165,233,0.15);color:var(--accent);padding:5px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;margin-bottom:10px">TECHNICAL DOCUMENTATION • LEVEL INDUSTRI</div>
+      <h1 style="font-size:1.55rem;font-weight:800;margin-bottom:8px;line-height:1.25">Indexer Maintenance<br>ESEC Wire Bonder 3088</h1>
+      <p>Prosedur perawatan preventif standar industri untuk sistem Indexer (PI Indexer) berdasarkan Service & Maintenance Manual Issue 08/2000, Software Release 54.0.</p>
+      <h2>1. Overview</h2>
+      <p>Sistem Indexer (PI Indexer) bertanggung jawab atas pergerakan leadframe dari input magazine menuju bonding area dan kemudian ke output magazine. Perawatan yang tepat sangat kritis untuk menjaga yield, mengurangi unscheduled downtime, dan memastikan akurasi posisi leadframe.</p>
+      <p>Komponen utama: <strong style="color:var(--text)">Back Rail, Front Rail, Linear Motor, Encoder, Clamps, Sensors, dan Slider Assembly</strong>.</p>
+      <h2>2. Preventive Maintenance Schedule</h2>
+      <div class="card-grid">
+        <div class="card"><h4>Sensors Cleaning & Adjustment</h4><p>Input, Position, Output, Collision sensors</p><div class="period">Setiap 3 bulan / 2.000 jam</div></div>
+        <div class="card"><h4>Back Rail Leadscrew Lubrication</h4><p>Pembersihan + aplikasi grease spindle</p><div class="period">Setiap 6 bulan</div></div>
+        <div class="card"><h4>Front Rail Slider & Leadscrew</h4><p>Lubrication slider + leadscrew + spindle nut</p><div class="period">Setiap 1 tahun</div></div>
+        <div class="card"><h4>Back Rail Drive Belt Tension</h4><p>Pemeriksaan dan penyesuaian tegangan belt</p><div class="period">Setiap 1 tahun</div></div>
+        <div class="card"><h4>Slider Assembly Inspection</h4><p>Pembersihan guide rods & rollers + lubrication</p><div class="period">Setiap 2 tahun</div></div>
+        <div class="card"><h4>Vacuum Valve Cleaning</h4><p>Process heater zone vacuum valve</p><div class="period">Setiap 6 bulan</div></div>
+      </div>
+      <h2>3. Required Tools & Materials</h2>
+      <h3>Standard Tools</h3>
+      <div class="table-wrapper">
+        <table class="docs-table">
+          <thead><tr><th>Tool</th><th>Specification</th><th>Usage</th></tr></thead>
+          <tbody>
+            <tr><td>Allen Key Set</td><td>1.5 / 2.0 / 2.5 / 3.0 / 4.0 mm</td><td>Hampir semua prosedur</td></tr>
+            <tr><td>Screwdriver</td><td>No. 0, No. 2, No. 3, Phillips No.1</td><td>Side plate, sensors, motor</td></tr>
+            <tr><td>Soft Brush</td><td>—</td><td>Pembersihan sensor</td></tr>
+            <tr><td>Feeler Gauge</td><td>0.05 / 0.4 / 1.0 / 1.2 mm</td><td>Gap & clearance check</td></tr>
+            <tr><td>Calliper Gauge</td><td>—</td><td>Height & dimension measurement</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Special Tools & Consumables</h3>
+      <div class="table-wrapper">
+        <table class="docs-table">
+          <thead><tr><th>Item</th><th>ESEC Part Number</th><th>Application</th></tr></thead>
+          <tbody>
+            <tr><td>Drive Spindle Lubrication Grease</td><td>240.0065.1</td><td>Back Rail Leadscrew</td></tr>
+            <tr><td>Metalon HTL-2 Grease</td><td>240.0011.1</td><td>Front Rail, Slider, Guide rods</td></tr>
+            <tr><td>PI-Rails Calibration Tool</td><td>905.1013/04</td><td>Rail height & parallelism</td></tr>
+            <tr><td>MH-PI Calibration Tool</td><td>905.1012/03</td><td>Height adjustment & vacuum valve</td></tr>
+            <tr><td>Alcohol / Acetone + Soft Cloth</td><td>—</td><td>Pembersihan surface</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>4. Detailed Procedures</h2>
+      <h3>4.1 Back Rail Leadscrew Lubrication (Setiap 6 bulan)</h3>
+      <div class="steps">
+        <div class="step"><div class="step-content"><strong>Unload leadframes</strong> — ASSIST INDEXER → tekan <em>unload complete</em>. Rails ke posisi init.</div></div>
+        <div class="step"><div class="step-content"><strong>Power Off</strong> — Set mains switch ke OFF (“0”). Tunggu minimal 20 menit (heater bisa 350°C).</div></div>
+        <div class="step"><div class="step-content"><strong>Clean leadscrew</strong> — Soft cloth + alcohol untuk menghilangkan grease lama.</div></div>
+        <div class="step"><div class="step-content"><strong>Apply new grease</strong> — Oleskan Drive Spindle Lubrication Grease (240.0065.1).</div></div>
+        <div class="step"><div class="step-content"><strong>Functional check</strong> — Power ON → DEBUG – INDEXER – RAILS → gerakkan back rails.</div></div>
+      </div>
+      <h3>4.2 Indexer Sensors Cleaning & Adjustment (Setiap 3 bulan)</h3>
+      <p>Sensor: Frame Input, Frame Position, Frame Output, dan Heater Plate Collision Sensor.</p>
+      <div class="info-box"><p>Gunakan soft brush. Setelah bersih, adjust dengan feeler gauge 1.0 mm (Fig. B6-15).</p></div>
+      <h3>4.3 Back Rail Drive Belt Tension (Setiap 1 tahun)</h3>
+      <p>Gunakan Allen Key 1.5 mm untuk melonggarkan tiga motor fixing screws, sesuaikan tegangan belt, lalu init back rails.</p>
+      <h3>4.4 Front Rail Slider & Leadscrew Lubrication (Setiap 1 tahun)</h3>
+      <p>Buka side plate, bersihkan leadscrew dan spindle nut dengan alcohol, lalu aplikasikan Metalon HTL-2 (240.0011.1).</p>
+      <h2>5. Safety Requirements</h2>
+      <div class="warning-box">
+        <h4>⚠️ CRITICAL SAFETY WARNINGS</h4>
+        <p>• Isolasi mesin dari mains supply sebelum prosedur mechanical.<br>
+           • Heater dapat mencapai 350°C — tunggu minimal 20 menit.<br>
+           • Unload semua leadframe dan magazine sebelum maintenance.<br>
+           • Gunakan ESD protection saat menangani komponen elektronik.<br>
+           • Jangan melebihi torque yang ditentukan pada fixing screws.</p>
+      </div>
+      <h2>6. Reference</h2>
+      <p><strong style="color:var(--text)">ESEC Wire Bonder 3088 – Service & Maintenance Manual</strong><br>
+      Object/Document Number: 997.3017/01<br>
+      Software Release: 54.0 | Issue: 08 / 2000<br>
+      Chapter: PART B – Chapter 6 (PI Indexer)</p>
+      <p style="margin-top:12px;font-size:0.82rem;color:var(--muted)">Dokumen ini ringkasan teknis untuk training. Selalu rujuk manual resmi ESEC untuk prosedur lengkap.</p>
+    </div>
+  </div>
+  <!-- CHECKLIST -->
+  <div id="page-checklist" class="page">
+    <div class="hero">
+      <h1>Preventive Maintenance Checklist</h1>
+      <p>Maintenance per mesin ESEC Wire Bonder 3088. Pilih WB001–WB100 untuk memeriksa dan menyimpan progress masing-masing mesin.</p>
+      <div class="machine-selector-card">
+        <label for="checklist-machine">Mesin yang sedang di-maintenance</label>
+        <select id="checklist-machine" onchange="changeChecklistMachine()"></select>
+        <span id="selected-machine-label">WB001</span>
+      </div>
+      <div class="stats">
+        <div class="stat-card total"><div class="label">Total Task</div><div class="value" id="stat-total">0</div></div>
+        <div class="stat-card completed"><div class="label">Completed</div><div class="value" id="stat-done">0</div></div>
+        <div class="stat-card pending"><div class="label">Remaining</div><div class="value" id="stat-left">0</div></div>
+        <div class="stat-card pct"><div class="label">Progress</div><div class="value" id="stat-pct">0%</div></div>
+      </div>
+      <div class="controls">
+        <input type="text" id="search" placeholder="Cari..." oninput="renderChecklist()" />
+        <select id="filter-status" onchange="renderChecklist()">
+          <option value="">All Status</option>
+          <option value="pending">Belum Selesai</option>
+          <option value="done">Sudah Selesai</option>
+        </select>
+        <button type="button" class="btn success" onclick="addNewTask()">+ Tambah Item</button>
+        <button type="button" class="btn outline" onclick="resetAll()">Reset</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th></th><th>No</th><th>Equipment / Part</th><th>Type</th><th>Description</th>
+            <th>Frequency</th><th>Priority</th><th>Tgl Mulai</th><th>Terakhir Maint.</th><th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" style="display:none">Belum ada data. Klik "+ Tambah Item".</div>
+    </div>
+  </div>
+  <footer>Indexer PM System • ESEC Wire Bonder 3088 • Responsive Android, iOS, Windows & macOS</footer>
+</div>
+<script>
+  /* ===== THEME ===== */
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const btn = document.getElementById("theme-btn");
+    if (btn) btn.textContent = theme === "dark" ? "🌙" : "☀️";
+    localStorage.setItem("indexer_theme", theme);
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+  }
+  // Load theme on start
+  (function() {
+    const saved = localStorage.getItem("indexer_theme") || "dark";
+    applyTheme(saved);
+  })();
+  /* ===== FIREBASE ONLINE CONFIG ===== */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDk7RLS-MSB0b8x4xexVSgcsDk_78pT8yc",
+    authDomain: "indexer-pm.firebaseapp.com",
+    projectId: "indexer-pm",
+    storageBucket: "indexer-pm.firebasestorage.app",
+    messagingSenderId: "727691763243",
+    appId: "1:727691763243:web:c71955cbdb1e077d1d946e",
+    measurementId: "G-6GR55H6E4S"
+  };
+  let db = null;
+  let firebaseReady = false;
+  try {
+    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "GANTI_API_KEY") {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      firebaseReady = true;
+      console.log("Firebase online aktif");
+    } else {
+      console.warn("Firebase config belum diisi — mode lokal (localStorage)");
+    }
+  } catch (e) {
+    console.warn("Firebase gagal init, pakai localStorage:", e);
+  }
+
+  /* ===== USERS (Online + fallback lokal) ===== */
+  const USERS_KEY="indexer_pm_users_v7";
+  const MASTER_KEY="indexer_pm_master_v1";
+  const DEFAULT_MASTER={login:"MASTER",password:"Master@12345",role:"master",nama:"Praya Andhika Saputra"};
+
+  function getUsersLocal(){try{return JSON.parse(localStorage.getItem(USERS_KEY))||{};}catch{return {};}}
+  function saveUsersLocal(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
+  function getUsers(){return getUsersLocal();}
+  function saveUsers(u){saveUsersLocal(u);}
+  function getMaster(){try{return JSON.parse(localStorage.getItem(MASTER_KEY))||DEFAULT_MASTER;}catch{return DEFAULT_MASTER;}}
+  function saveMaster(m){localStorage.setItem(MASTER_KEY,JSON.stringify(m));}
+  function isMaster(){return currentRole==="master";}
+
+  // Online helpers
+  async function cloudGetUser(id){
+    if(!firebaseReady) return null;
+    try{
+      const snap = await db.collection("users").doc(String(id).toLowerCase()).get();
+      return snap.exists ? {id: snap.id, ...snap.data()} : null;
+    }catch(e){console.error(e); return null;}
+  }
+  async function cloudSetUser(id, data){
+    if(!firebaseReady) return false;
+    try{
+      await db.collection("users").doc(String(id).toLowerCase()).set(data, {merge:true});
+      return true;
+    }catch(e){console.error(e); return false;}
+  }
+  async function cloudDeleteUser(id){
+    if(!firebaseReady) return false;
+    try{
+      await db.collection("users").doc(String(id).toLowerCase()).delete();
+      return true;
+    }catch(e){console.error(e); return false;}
+  }
+  async function cloudListUsers(){
+    if(!firebaseReady) return null;
+    try{
+      const snap = await db.collection("users").get();
+      const map = {};
+      snap.forEach(doc => { map[doc.id] = doc.data(); });
+      return map;
+    }catch(e){console.error(e); return null;}
+  }
+  const defaultTasks = [
+    { id:1, part:"Frame Input Sensor", type:"Cleaning & Adjustment", desc:"Clean sensor head with soft brush. Adjust with feeler gauge 1.0mm.", freq:"Every 3 Months", priority:"High" },
+    { id:2, part:"Frame Position Sensor (FPS)", type:"Cleaning & Adjustment", desc:"Clean FPS head. Check Y-position and amplifier.", freq:"Every 3 Months", priority:"High" },
+    { id:3, part:"Frame Output Sensor", type:"Cleaning & Adjustment", desc:"Clean output sensor head and verify amplifier.", freq:"Every 3 Months", priority:"High" },
+    { id:4, part:"Heater Plate Collision Sensor", type:"Cleaning & Adjustment", desc:"Clean collision sensor and confirm trigger distance.", freq:"Every 3 Months", priority:"High" },
+    { id:5, part:"Back Rail Leadscrew", type:"Lubrication", desc:"Clean with alcohol. Apply Drive Spindle Grease 240.0065.1.", freq:"Every 6 Months", priority:"High" },
+    { id:6, part:"Back Rail Drive Belt", type:"Tension Adjustment", desc:"Check tension. Adjust 3 motor screws (Allen 1.5mm).", freq:"Yearly", priority:"High" },
+    { id:7, part:"Front Rail Slider", type:"Lubrication", desc:"Clean and lubricate with Metalon HTL-2 (240.0011.1).", freq:"Yearly", priority:"High" },
+    { id:8, part:"Front Rail Leadscrew", type:"Lubrication", desc:"Clean leadscrew + spindle nut. Apply Metalon HTL-2.", freq:"Yearly", priority:"High" },
+    { id:9, part:"Fixed Clamps (Upper & Lower)", type:"Inspection & Cleaning", desc:"Inspect jaws. Clean. Check gap with feeler 0.05/0.4mm.", freq:"Yearly", priority:"High" },
+    { id:10, part:"Moveable Clamps (Upper & Lower)", type:"Inspection & Cleaning", desc:"Inspect moveable jaws, clean, verify force and alignment.", freq:"Yearly", priority:"High" },
+    { id:11, part:"Encoder", type:"Inspection & Cleaning", desc:"Clean encoder. Check gap with feeler 1.2mm.", freq:"Yearly", priority:"High" },
+    { id:12, part:"Slider Assembly - Guide Rods", type:"Inspection & Lubrication", desc:"Clean with acetone. Apply Metalon HTL-2.", freq:"Every 2 Years", priority:"High" },
+    { id:13, part:"Flag Ejector / Leadframe Ejector", type:"Inspection & Cleaning", desc:"Inspect ejector action, clean debris.", freq:"Every 6 Months", priority:"Medium" },
+    { id:14, part:"Process Heater Zone Vacuum Valve", type:"Cleaning", desc:"Clean vacuum valve. Function check with MH-PI tool.", freq:"Every 6 Months", priority:"Medium" },
+    { id:15, part:"Indexer Overall Visual Check", type:"Visual Inspection", desc:"Visual check for abnormal noise, jam, or sensor error.", freq:"Weekly", priority:"Medium" }
+  ];
+  let currentNIM = null, currentRole = null, profile = {};
+  let tasks = [], taskState = {}, nextId = 100, selectedMachine = "WB001";
+  function storageKey() { return `indexer_pm_data_${currentNIM}`; }
+  function profileKey() { return `indexer_pm_profile_${currentNIM}`; }
+  function machineKey(){return `indexer_pm_machine_${currentNIM}_${selectedMachine}`;}
+  function loadData() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(machineKey()));
+      if (raw) { tasks = raw.tasks || JSON.parse(JSON.stringify(defaultTasks)); taskState = raw.taskState || {}; nextId = raw.nextId || 100; }
+      else { tasks = JSON.parse(JSON.stringify(defaultTasks)); taskState = {}; nextId = 100; }
+    } catch { tasks = JSON.parse(JSON.stringify(defaultTasks)); taskState = {}; nextId = 100; }
+    try { profile = JSON.parse(localStorage.getItem(profileKey())) || {}; } catch { profile = {}; }
+  }
+  function saveData() { localStorage.setItem(machineKey(), JSON.stringify({ tasks, taskState, nextId })); }
+  function saveProfileData() { localStorage.setItem(profileKey(), JSON.stringify(profile)); }
+  function nowStr() { return new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }); }
+  /* ===== TABS (iPhone fix) ===== */
+  function switchTab(tab) {
+    const loginTab = document.getElementById("tab-login");
+    const registerTab = document.getElementById("tab-register");
+    const formLogin = document.getElementById("form-login");
+    const formRegister = document.getElementById("form-register");
+    if (tab === "login") {
+      loginTab.classList.add("active"); registerTab.classList.remove("active");
+      formLogin.style.display = "block"; formRegister.style.display = "none";
+    } else {
+      registerTab.classList.add("active"); loginTab.classList.remove("active");
+      formLogin.style.display = "none"; formRegister.style.display = "block";
+    }
+    hideMsg();
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const loginTab = document.getElementById("tab-login");
+    const registerTab = document.getElementById("tab-register");
+    function handleLogin(e) { e.preventDefault(); e.stopPropagation(); switchTab("login"); }
+    function handleRegister(e) { e.preventDefault(); e.stopPropagation(); switchTab("register"); }
+    loginTab.addEventListener("click", handleLogin);
+    loginTab.addEventListener("touchend", handleLogin);
+    registerTab.addEventListener("click", handleRegister);
+    registerTab.addEventListener("touchend", handleRegister);
+  });
+  function showMsg(text, type) {
+    const el = document.getElementById("auth-msg");
+    el.textContent = text; el.className = "auth-msg " + type; el.style.display = "block";
+  }
+  function hideMsg() { document.getElementById("auth-msg").style.display = "none"; }
+  function updateRegisterLabel(){const role=document.getElementById("reg-role").value;document.getElementById("reg-id-label").textContent=role==="dosen"?"Nama Dosen":"NIM";document.getElementById("reg-nim").placeholder=role==="dosen"?"Masukkan nama dosen":"Masukkan NIM";}
+  async function doRegister(){
+    const idEl=document.getElementById("reg-nim"), nameEl=document.getElementById("reg-name"), emailEl=document.getElementById("reg-email"), passEl=document.getElementById("reg-pass"), pass2El=document.getElementById("reg-pass2"), roleEl=document.getElementById("reg-role");
+    if(!idEl||!nameEl||!emailEl||!passEl||!pass2El||!roleEl){showMsg("Form pendaftaran belum siap. Silakan muat ulang halaman.","error");return;}
+    const id=idEl.value.trim(), nama=nameEl.value.trim(), email=emailEl.value.trim(), pass=passEl.value, pass2=pass2El.value, role=roleEl.value;
+    if(!id||!nama||!email||!pass){showMsg("Identitas, nama, email, dan password wajib diisi","error");return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showMsg("Format email tidak valid","error");return;}
+    if(pass.length<8){showMsg("Password minimal 8 karakter","error");return;}
+    if(pass!==pass2){showMsg("Konfirmasi password tidak sama","error");return;}
+    if(id.toUpperCase()==="MASTER"){showMsg("ID MASTER tidak boleh didaftarkan","error");return;}
+
+    const key=id.toLowerCase();
+    const now=nowStr();
+    const userData={password:pass,role,nama,email,nim:role==="mahasiswa"?id:"",loginId:id,firstAccess:now,lastAccess:now};
+
+    // Cek online dulu
+    if(firebaseReady){
+      const existing=await cloudGetUser(key);
+      if(existing){showMsg("Akun sudah terdaftar (online). Silakan login.","error");return;}
+      const ok=await cloudSetUser(key, userData);
+      if(!ok){showMsg("Gagal daftar online. Cek Firebase config / koneksi.","error");return;}
+    } else {
+      const users=getUsers();
+      if(users[key]){showMsg("Akun sudah terdaftar. Silakan login.","error");return;}
+      users[key]=userData; saveUsers(users);
+    }
+    // simpan juga lokal sebagai cache
+    const users=getUsers(); users[key]=userData; saveUsers(users);
+    showMsg("Akun berhasil didaftarkan online! Silakan login.","success");
+    setTimeout(()=>{switchTab("login");document.getElementById("login-nim").value=id;document.getElementById("login-pass").value="";},700);
+  }
+
+  async function doLogin(){
+    const id=document.getElementById("login-nim").value.trim(),pass=document.getElementById("login-pass").value;
+    if(!id||!pass){showMsg("Identitas dan Password wajib diisi","error");return;}
+    const master=getMaster();
+    // Master login (lokal)
+    if(id.toLowerCase()===master.login.toLowerCase()&&pass===master.password){
+      currentNIM=master.login;currentRole="master";
+      profile={nama:master.nama||"Master",email:"",timezone:"Asia/Jakarta",firstAccess:nowStr(),lastAccess:nowStr()};
+      saveProfileData();
+      document.getElementById("auth-screen").style.display="none";
+      document.getElementById("app").style.display="block";
+      updateHeaderProfile();applyRoleUI();showPage("home");
+      return;
+    }
+
+    let user=null;
+    // Coba online dulu
+    if(firebaseReady){
+      user=await cloudGetUser(id);
+    }
+    // Fallback lokal
+    if(!user){
+      const users=getUsers();
+      user=users[id.toLowerCase()]||null;
+    }
+    if(!user){showMsg("Akun belum terdaftar. Silakan daftar dulu.","error");return;}
+    if(user.password!==pass){showMsg("Password salah","error");return;}
+
+    currentNIM=user.role==="mahasiswa"?(user.nim||user.loginId||id):(user.loginId||id);
+    currentRole=user.role;
+    profile=JSON.parse(localStorage.getItem(profileKey())||"{}");
+    profile.nama=user.nama||profile.nama||"";
+    profile.email=user.email||profile.email||"";
+    profile.timezone=profile.timezone||"Asia/Jakarta";
+    const now=nowStr();
+    if(!profile.firstAccess) profile.firstAccess=user.firstAccess||now;
+    profile.lastAccess=now;
+    saveProfileData();
+
+    // Update lastAccess online
+    if(firebaseReady){
+      cloudSetUser(id, {lastAccess: now, nama: profile.nama, email: profile.email});
+    }
+    // Update cache lokal
+    const users=getUsers();
+    users[id.toLowerCase()]={...user, lastAccess:now, nama:profile.nama, email:profile.email};
+    saveUsers(users);
+
+    document.getElementById("auth-screen").style.display="none";
+    document.getElementById("app").style.display="block";
+    updateHeaderProfile();applyRoleUI();showPage("home");
+  }
+  function openResetModal(){document.getElementById("reset-email").value="";document.getElementById("reset-modal").classList.add("show");}
+  function closeResetModal(){document.getElementById("reset-modal").classList.remove("show");}
+  function requestPasswordReset(){
+    const email=document.getElementById("reset-email").value.trim();
+    if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert("Masukkan email yang valid.");return;}
+    const users=getUsers();
+    const found=Object.entries(users).find(([k,u])=>(u.email||"").toLowerCase()===email.toLowerCase());
+    if(!found){alert("Email tidak ditemukan. Pastikan email yang digunakan saat daftar sudah benar.");return;}
+    // Frontend-only safety: actual email delivery requires a backend/email service.
+    const resetRequest={email,loginId:found[1].loginId,createdAt:new Date().toISOString(),token:crypto.randomUUID?crypto.randomUUID():String(Date.now())};
+    localStorage.setItem("indexer_pm_reset_request",JSON.stringify(resetRequest));
+    const endpoint=window.PASSWORD_RESET_ENDPOINT||"";
+    if(endpoint){
+      fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(resetRequest)}).then(()=>alert("Permintaan reset sudah dikirim ke server email.")).catch(()=>alert("Server reset tidak dapat dihubungi."));
+    }else{
+      alert("Permintaan reset sudah dibuat untuk "+email+". Agar link reset benar-benar terkirim melalui email, hubungkan PASSWORD_RESET_ENDPOINT ke backend/email service.");
+    }
+    closeResetModal();
+  }
+  function changeOwnPassword(){
+    const old=document.getElementById("prof-current-pass").value;
+    const next=document.getElementById("prof-new-pass").value;
+    const next2=document.getElementById("prof-new-pass2").value;
+    if(!old||!next||!next2){alert("Semua kolom password wajib diisi.");return;}
+    if(next.length<8){alert("Password baru minimal 8 karakter.");return;}
+    if(next!==next2){alert("Konfirmasi password baru tidak sama.");return;}
+    if(isMaster()){const m=getMaster();if(old!==m.password){alert("Password saat ini salah.");return;}m.password=next;saveMaster(m);}
+    else{const users=getUsers(),key=String(currentNIM).toLowerCase(),u=users[key];if(!u||u.password!==old){alert("Password saat ini salah.");return;}u.password=next;users[key]=u;saveUsers(users);}
+    document.getElementById("prof-current-pass").value="";document.getElementById("prof-new-pass").value="";document.getElementById("prof-new-pass2").value="";alert("Password berhasil diganti.");
+  }
+  document.getElementById("reset-modal").addEventListener("click",function(e){if(e.target===this)closeResetModal();});
+  function populateMachineSelect(){const sel=document.getElementById("checklist-machine");if(!sel)return;sel.innerHTML=Array.from({length:100},(_,i)=>{const id="WB"+String(i+1).padStart(3,"0");return `<option value="${id}">${id} — ESEC Wire Bonder 3088</option>`;}).join("");sel.value=selectedMachine;document.getElementById("selected-machine-label").textContent=selectedMachine;}
+  function changeChecklistMachine(){selectedMachine=document.getElementById("checklist-machine").value;loadData();document.getElementById("selected-machine-label").textContent=selectedMachine;renderChecklist();}
+
+  function applyRoleUI(){document.querySelectorAll(".admin-only").forEach(el=>el.style.display=isMaster()?"":"none");updateHome();}
+  function doLogout(){currentNIM=null;currentRole=null;profile={};tasks=[];taskState={};document.getElementById("app").style.display="none";document.getElementById("auth-screen").style.display="flex";document.getElementById("login-nim").value="";document.getElementById("login-pass").value="";hideMsg();}
+  function updateHeaderProfile(){const name=profile.nama||currentNIM||"User";document.getElementById("header-name").textContent=name.length>14?name.slice(0,12)+"…":name;document.getElementById("header-avatar").textContent=(profile.nama||currentNIM||"?").charAt(0).toUpperCase();updateHome();}
+  function updateHome(){const roleLabel=currentRole==="master"?"Master":currentRole==="dosen"?"Dosen":"Mahasiswa";const idLabel=currentRole==="master"?"MASTER":currentRole==="dosen"?(profile.nama||currentNIM||"Dosen"):(currentNIM||"NIM");const branch=currentRole==="dosen"?"▥ Dosen":currentRole==="master"?"★ Master":"▥ Mahasiswa";const now=new Date();const greet=now.getHours()<11?"Selamat pagi":now.getHours()<15?"Selamat siang":now.getHours()<18?"Selamat sore":"Selamat malam";document.getElementById("home-greeting").textContent=`${greet}, ${profile.nama||currentNIM||"User"}! 👋`;document.getElementById("home-date").textContent=now.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});document.getElementById("home-name").textContent=profile.nama||currentNIM||"User";document.getElementById("home-role").textContent=roleLabel;document.getElementById("home-id").textContent=idLabel;document.getElementById("home-branch").textContent=branch;}
+  function toggleSideMenu(){document.getElementById("side-menu").classList.toggle("open");document.getElementById("menu-backdrop").classList.toggle("show");}
+  function openProfile() {
+    document.getElementById("prof-nama").value = profile.nama || "";
+    document.getElementById("prof-nim").value = currentRole==="dosen" ? (profile.nama||currentNIM||"") : (currentNIM||"");document.querySelector('#profile-modal .profile-field:nth-of-type(2) label').textContent=currentRole==="dosen"?"Identitas Dosen":"NIM";
+    document.getElementById("prof-email").value = profile.email || "";
+    document.getElementById("prof-timezone").value = profile.timezone || "Asia/Jakarta";
+    document.getElementById("prof-first").textContent = profile.firstAccess || "-";
+    document.getElementById("prof-last").textContent = profile.lastAccess || "-";
+    const qrData = encodeURIComponent(JSON.stringify({
+      nama: profile.nama||"", nim: currentNIM, email: profile.email||"",
+      role: currentRole, timezone: profile.timezone||"Asia/Jakarta",
+      firstAccess: profile.firstAccess||"", lastAccess: profile.lastAccess||""
+    }));
+    document.getElementById("profile-qr-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}`;
+    document.getElementById("profile-modal").classList.add("show");
+  }
+  function closeProfile() { document.getElementById("profile-modal").classList.remove("show"); }
+  function saveProfile() {
+    profile.nama = document.getElementById("prof-nama").value.trim();
+    profile.email = document.getElementById("prof-email").value.trim();
+    profile.timezone = document.getElementById("prof-timezone").value;
+    saveProfileData(); updateHeaderProfile(); closeProfile();
+  }
+  document.getElementById("profile-modal").addEventListener("click", function(e){ if(e.target===this) closeProfile(); });
+  function showPage(name){["home","docs","checklist","machines","admin"].forEach(p=>{const el=document.getElementById("page-"+p);if(el)el.classList.toggle("active",name===p);});if(name==="checklist"){populateMachineSelect();loadData();renderChecklist();}if(name==="machines")renderMachines();if(name==="admin"){if(!isMaster()){showPage("home");return;}renderUsers();}document.querySelectorAll(".side-menu>button").forEach(b=>b.classList.remove("active"));const m=document.getElementById("menu-"+name);if(m)m.classList.add("active");}
+  function renderMachines(){const q=(document.getElementById("machine-search")?.value||"").toUpperCase(),box=document.getElementById("machine-grid");if(!box)return;let out="";for(let i=1;i<=100;i++){const id="WB"+String(i).padStart(3,"0");if(q&&!id.includes(q))continue;out+=`<div class="machine-card" onclick="selectMachine('${id}')"><div class="machine-id">${id}</div><div>ESEC Wire Bonder 3088</div><div class="machine-status">● Registry Active</div></div>`;}box.innerHTML=out||'<div class="empty">Mesin tidak ditemukan.</div>';}
+  function selectMachine(id){selectedMachine=id;showPage("checklist");populateMachineSelect();document.getElementById("checklist-machine").value=id;loadData();renderChecklist();}
+  async function renderUsers(){
+    if(!isMaster()) return;
+    const tbody=document.getElementById("users-tbody");
+    const statusEl=document.getElementById("online-status");
+    if(!tbody) return;
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted)">Memuat data user...</td></tr>`;
+    if(statusEl) statusEl.textContent = firebaseReady ? "● Mode Online (Firebase aktif)" : "○ Mode Lokal (Firebase config belum diisi — hanya user di browser ini)";
+
+    let users = null;
+    if(firebaseReady){
+      users = await cloudListUsers();
+    }
+    if(!users){
+      users = getUsers(); // fallback lokal
+    } else {
+      // sync ke cache lokal juga
+      saveUsers(users);
+    }
+
+    const entries = Object.entries(users||{});
+    if(!entries.length){
+      tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted)">Belum ada user terdaftar.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = entries.map(([key,u])=>`
+      <tr>
+        <td><strong>${esc(u.loginId||key)}</strong></td>
+        <td>${esc(u.nama||"-")}</td>
+        <td><span class="role-chip">${esc(u.role||"-")}</span></td>
+        <td>${esc(u.email||"-")}</td>
+        <td>${esc(u.lastAccess||"-")}</td>
+        <td><button class="btn danger" onclick="removeUser('${esc(key)}')">Hapus Akses</button></td>
+      </tr>
+    `).join("");
+  }
+
+  async function addMasterUser(){
+    if(!isMaster()) return;
+    const id=prompt("NIM mahasiswa atau nama/login dosen:"); if(!id) return;
+    const nama=prompt("Nama lengkap:"); if(!nama) return;
+    const role=(prompt("Role: mahasiswa / dosen","mahasiswa")||"").toLowerCase();
+    if(!["mahasiswa","dosen"].includes(role)){alert("Role tidak valid.");return;}
+    const pass=prompt("Password awal (min. 8 karakter):"); if(!pass||pass.length<8){alert("Password minimal 8 karakter.");return;}
+    const key=id.trim().toLowerCase();
+    const now=nowStr();
+    const userData={password:pass,role,nama,email:"",nim:role==="mahasiswa"?id.trim():"",loginId:id.trim(),firstAccess:now,lastAccess:now};
+
+    if(firebaseReady){
+      const existing=await cloudGetUser(key);
+      if(existing){alert("Akun sudah ada (online).");return;}
+      const ok=await cloudSetUser(key, userData);
+      if(!ok){alert("Gagal menambah user online.");return;}
+    }
+    const users=getUsers();
+    if(users[key] && !firebaseReady){alert("Akun sudah ada.");return;}
+    users[key]=userData; saveUsers(users);
+    renderUsers();
+  }
+
+  async function removeUser(key){
+    if(!isMaster()) return;
+    if(!confirm("Hapus akses user ini?")) return;
+    if(firebaseReady){
+      await cloudDeleteUser(key);
+    }
+    const users=getUsers();
+    delete users[key];
+    saveUsers(users);
+    renderUsers();
+  }
+
+  function changeMasterPassword(){if(!isMaster())return;const m=getMaster(),old=prompt("Password master saat ini:");if(old!==m.password){alert("Password master salah.");return;}const next=prompt("Password master baru (min. 8 karakter):");if(!next||next.length<8){alert("Password minimal 8 karakter.");return;}m.password=next;saveMaster(m);alert("Password master berhasil diubah.");}
+  function toggle(id) {
+    if (!taskState[id]) taskState[id] = {done:false,startDate:"",lastDate:""};
+    taskState[id].done = !taskState[id].done;
+    if (taskState[id].done) {
+      const today = new Date().toISOString().slice(0,10);
+      if (!taskState[id].startDate) taskState[id].startDate = today;
+      taskState[id].lastDate = today;
+    }
+    saveData(); renderChecklist();
+  }
+  function updateDate(id, field, value) {
+    if (!taskState[id]) taskState[id] = {done:false,startDate:"",lastDate:""};
+    taskState[id][field] = value; saveData();
+  }
+  function updateField(id, field, value) {
+    const t = tasks.find(x=>x.id===id); if(t){ t[field]=value; saveData(); }
+  }
+  function addNewTask() {
+    const id = nextId++;
+    tasks.push({id, part:"Item Baru", type:"Inspection", desc:"Deskripsi maintenance...", freq:"Yearly", priority:"Medium"});
+    taskState[id] = {done:false,startDate:"",lastDate:""};
+    saveData(); renderChecklist();
+  }
+  function deleteTask(id) {
+    if (!confirm("Hapus item ini?")) return;
+    tasks = tasks.filter(t=>t.id!==id); delete taskState[id]; saveData(); renderChecklist();
+  }
+  function resetAll() {
+    if (!confirm("Reset semua checklist?")) return;
+    tasks = JSON.parse(JSON.stringify(defaultTasks)); taskState = {}; nextId = 100;
+    saveData(); renderChecklist();
+  }
+  function renderChecklist() {
+    const q = (document.getElementById("search")?.value||"").toLowerCase();
+    const fStatus = document.getElementById("filter-status")?.value||"";
+    const filtered = tasks.filter(t=>{
+      const matchQ = !q || t.part.toLowerCase().includes(q) || (t.desc||"").toLowerCase().includes(q) || (t.type||"").toLowerCase().includes(q);
+      const isDone = taskState[t.id]?.done;
+      const matchS = !fStatus || (fStatus==="done"&&isDone) || (fStatus==="pending"&&!isDone);
+      return matchQ && matchS;
+    });
+    const tbody = document.getElementById("tbody");
+    const empty = document.getElementById("empty");
+    if (filtered.length===0) { tbody.innerHTML=""; empty.style.display="block"; }
+    else {
+      empty.style.display="none";
+      tbody.innerHTML = filtered.map((t,idx)=>{
+        const s = taskState[t.id]||{done:false,startDate:"",lastDate:""};
+        return `<tr class="${s.done?"done":""}">
+          <td class="check-cell"><input type="checkbox" ${s.done?"checked":""} onchange="toggle(${t.id})" /></td>
+          <td>${idx+1}</td>
+          <td><input class="inline-input" value="${esc(t.part)}" onchange="updateField(${t.id},'part',this.value)" style="font-weight:600" /></td>
+          <td><input class="inline-input" value="${esc(t.type)}" onchange="updateField(${t.id},'type',this.value)" /></td>
+          <td><input class="inline-input" value="${esc(t.desc)}" onchange="updateField(${t.id},'desc',this.value)" /></td>
+          <td><select class="inline-input" style="width:120px" onchange="updateField(${t.id},'freq',this.value)">
+            ${["Weekly","Every 3 Months","Every 6 Months","Yearly","Every 2 Years"].map(f=>`<option value="${f}" ${t.freq===f?"selected":""}>${f}</option>`).join("")}
+          </select></td>
+          <td><select class="inline-input" style="width:85px" onchange="updateField(${t.id},'priority',this.value)">
+            ${["High","Medium","Low"].map(p=>`<option value="${p}" ${t.priority===p?"selected":""}>${p}</option>`).join("")}
+          </select></td>
+          <td><input type="date" class="date-input" value="${s.startDate||""}" onchange="updateDate(${t.id},'startDate',this.value)" /></td>
+          <td><input type="date" class="date-input" value="${s.lastDate||""}" onchange="updateDate(${t.id},'lastDate',this.value)" /></td>
+          <td><button type="button" class="del-btn" onclick="deleteTask(${t.id})">Hapus</button></td>
+        </tr>`;
+      }).join("");
+    }
+    const total = tasks.length;
+    const doneCount = tasks.filter(t=>taskState[t.id]?.done).length;
+    document.getElementById("stat-total").textContent = total;
+    document.getElementById("stat-done").textContent = doneCount;
+    document.getElementById("stat-left").textContent = total - doneCount;
+    document.getElementById("stat-pct").textContent = total ? Math.round((doneCount/total)*100)+"%" : "0%";
+  }
+  function esc(str){ return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  document.getElementById("login-pass").addEventListener("keyup", e=>{ if(e.key==="Enter") doLogin(); });
+  document.getElementById("reg-pass2").addEventListener("keyup", e=>{ if(e.key==="Enter") doRegister(); });
+</script>
+</body>
+</html>
